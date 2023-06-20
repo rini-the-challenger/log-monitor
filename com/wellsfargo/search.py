@@ -1,74 +1,58 @@
 import string
-
-import nltk
 import pathlib
 from yml_admin import YmlAdmin
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-from nltk.classify import NaiveBayesClassifier
+import regex
 
-import pandas as pa
+
+import pandas as pd
 
 """
 Responsible for doing the search
 """
 
-training_data = [
-    ("Error: Disk full", "error"),
-    ("Warning: Connection lost", "warning"),
-    ("Error: Invalid input", "error"),
-    # Add more labeled log entries
-]
+pattern = ["info", "error", "warning"]
+err_df = pd.DataFrame(columns=['Filename', 'Type', 'Line No.', 'Issue Details'])
 
 
-def classify_log_entry(entry):
-    preprocessed_data = [(preprocess_text(entry), label) for entry, label in training_data]
-    classifier = NaiveBayesClassifier.train(preprocessed_data)
-
-    preprocessed_entry = preprocess_text(entry)
-
-    return classifier.classify(dict([(token, True) for token in preprocessed_entry]))
-
-
-def preprocess_text(text):
-    """ Preprocess training data Before training the classifier, preprocess the training data by tokenizing the log
-        entries, removing stop words and punctuation, and converting the text to lowercase
-    """
-
-    # Tokenize the text
-    tokens = word_tokenize(text)
-
-    # Remove punctuation
-    tokens = [token for token in tokens if token not in string.punctuation]
-
-    # Remove stop words
-    stop_words = set(stopwords.words("english"))
-    tokens = [token for token in tokens if token.lower() not in stop_words]
-
-    # Convert to lowercase
-    tokens = [token.lower() for token in tokens]
-
-    return tokens
-
-
-def read_log():
+def process_log():
     yml = YmlAdmin()
     yml.read_yaml()
     root = yml.settings['APP']['ROOT-DIR']
     root_path = pathlib.Path(root)
 
-    # root_path.iterdir()
-
-    # Iterate and check for log files
     for item in root_path.rglob("*"):
-        print(f"{item} - {'dir' if item.is_dir() else 'file'}")
+        # print(f"{item} - {'dir' if item.is_dir() else 'file'}")
         if item.is_file():
             # Read log file and classify each entry
-            with open(item) as file:
-
+            with open(item, 'r', encoding="ISO-8859-1") as file:
+                line_cnt = 0
                 for line in file:
-                    classification = classify_log_entry(line)
-                    if classification == "error":
-                        print(f"Error: {line.strip()}")
-                    elif classification == "warning":
-                        print(f"Warning: {line.strip()}")
+                    line_cnt = line_cnt + 1
+                    if str(pattern[0]) in line:
+                        temp_lst = [str(item), "ERROR", str(line_cnt), line]
+                        print(temp_lst)
+                    elif str(pattern[1]) in line:
+                        temp_lst = [str(item), "WARNING", str(line_cnt), line]
+                        print(temp_lst)
+
+                        err_df.loc[len(err_df)] = temp_lst
+
+                    # r1 = regex.search (r"error", line)
+                    # print(r1)
+                    # findall(r"^\w+",xx)
+    # display all the  rows
+    pd.set_option('display.max_rows', None)
+
+    # display all the  columns
+    pd.set_option('display.max_columns', None)
+
+    # set width  - 100
+    pd.set_option('display.width', 100)
+
+    # set column header -  left
+    pd.set_option('display.colheader_justify', 'left')
+
+    # set precision - 5
+    pd.set_option('display.precision', 10)
+    print(err_df)
+    return err_df
