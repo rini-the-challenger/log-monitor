@@ -1,1 +1,6 @@
+APP:
+  ENVIRONMENT: test
+  DEBUG: True
+  # Only accept True or False
+  ROOT-DIR: D:/WF/Pride_Hackathon
 
