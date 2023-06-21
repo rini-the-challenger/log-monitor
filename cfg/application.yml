@@ -3,4 +3,4 @@ APP:
   DEBUG: True
   # Only accept True or False
   ROOT-DIR: D:/WF/Pride_Hackathon
-
+  SCAN-XTN: [.log, .txt, .out]
